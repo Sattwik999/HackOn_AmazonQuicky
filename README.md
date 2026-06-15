@@ -22,7 +22,7 @@
 
 ---
 
-## 🎯 Problem Statement
+## Problem Statement
 
 ### The Decision Speed Gap in Quick Commerce
 
@@ -49,7 +49,7 @@ Amazon Quicky addresses the core challenge by **eliminating decision-making fric
 
 ---
 
-## 🚀 What Makes This Novel
+## What Makes This Novel
 
 ### From Search-Driven to Intent-Driven Commerce
 
@@ -58,10 +58,10 @@ Most e-commerce platforms are built around **product discovery**. Amazon Quicky 
 #### The Key Insight
 
 Customers often know what they want to accomplish:
-- ✅ "Hostel essentials for a month under ₹1500"
-- ✅ "Birthday gift for a 14-year-old under ₹2000"
-- ✅ "Movie night with friends"
-- ✅ "High fever at home"
+- "Hostel essentials for a month under ₹1500"
+- "Birthday gift for a 14-year-old under ₹2000"
+- "Movie night with friends"
+- "High fever at home"
 
 But **not the exact products they need**.
 
@@ -85,7 +85,7 @@ Unlike traditional recommendation engines that suggest products one at a time, *
 
 ---
 
-## 🏗️ System Architecture
+## System Architecture
 
 <div align="center">
   <img src="./public/architecture-diagram.png" alt="Quicky Shopping Platform Architecture" width="100%" />
@@ -97,7 +97,7 @@ The Quicky Shopping Platform is built on a **layered, microservices-inspired arc
 
 #### Layer Breakdown
 
-**🎨 User Interface Layer**
+**User Interface Layer**
 - **Quicky Chat Widget**: Voice + Text conversational interface
 - **Product Grid & Cards**: Visual product browsing
 - **Multi-Tier Cart Display**: Economy/Balanced/Premium options
@@ -105,7 +105,7 @@ The Quicky Shopping Platform is built on a **layered, microservices-inspired arc
 - **Quicky Wallet**: Prepaid balance management
 - **Order History & Subscriptions**: User account features
 
-**🧠 Intent Processing Layer**
+**Intent Processing Layer**
 - **Intent Parser (NLP + Regex)**: Extracts structured data from natural language
 - **Need Inference Engine**: Maps intent to concrete shopping needs
 - **Budget Extractor**: Identifies price constraints
@@ -113,7 +113,7 @@ The Quicky Shopping Platform is built on a **layered, microservices-inspired arc
 - **Urgency Detector**: Flags emergency vs. planned shopping
 - **Category Mapping & Prioritization**: Translates needs into searchable categories
 
-**🤖 AI Orchestration Layer**
+**AI Orchestration Layer**
 - **Quicky AI Agent** (Hugging Face Qwen3-32B):
   - Context-aware cart generation
   - Multi-tier basket optimization
@@ -122,7 +122,7 @@ The Quicky Shopping Platform is built on a **layered, microservices-inspired arc
 - **Ranking & Scoring Engine**: Multi-factor product evaluation
 - **Subscription Recommender**: Auto-reorder suggestions
 
-**📦 Product Data Layer**
+**Product Data Layer**
 - **SerpAPI Integration**: Live Amazon India product search
 - **Amazon Product Catalog**: Real-time inventory access
 - Features:
@@ -132,7 +132,7 @@ The Quicky Shopping Platform is built on a **layered, microservices-inspired arc
   - Delivery time estimates
   - Product images & metadata
 
-**👤 Personalization Layer**
+**Personalization Layer**
 - **User Profile Management**: LocalStorage/IndexedDB persistence
 - **Shopping History Tracking**: Pattern recognition for better suggestions
 - **Budget Profiling**: Spending habit analysis
@@ -165,9 +165,9 @@ The Quicky Shopping Platform is built on a **layered, microservices-inspired arc
 
 ---
 
-## ✨ Key Features
+## Key Features
 
-### 🤖 1. AI-Powered Cart Generation
+### 1. AI-Powered Cart Generation
 
 Transform natural language queries into complete, ready-to-checkout carts:
 
@@ -188,17 +188,17 @@ Quicky:
     └── Focus: Best brands, complete experience
 ```
 
-### 🎯 2. Intent-First Shopping Model
+### 2. Intent-First Shopping Model
 
 **No more searching** – just tell Quicky what you need:
 
-- ✅ **Emergency Mode**: "High fever at home" → Pain relief, electrolytes, thermometer
-- ✅ **Event Planning**: "Movie night for 4" → Snacks, drinks, popcorn
-- ✅ **Meal Prep**: "Biryani ingredients for 6" → Rice, spices, protein, aromatics
-- ✅ **Lifestyle Goals**: "Gym plan groceries for 10 days" → Protein, oats, healthy snacks
-- ✅ **Time-Bound**: "Hostel essentials for a month under ₹1500"
+- **Emergency Mode**: "High fever at home" → Pain relief, electrolytes, thermometer
+- **Event Planning**: "Movie night for 4" → Snacks, drinks, popcorn
+- **Meal Prep**: "Biryani ingredients for 6" → Rice, spices, protein, aromatics
+- **Lifestyle Goals**: "Gym plan groceries for 10 days" → Protein, oats, healthy snacks
+- **Time-Bound**: "Hostel essentials for a month under ₹1500"
 
-### 🔄 3. One-Click Alternatives
+### 3. One-Click Alternatives
 
 Instantly swap any item in your cart:
 
@@ -206,7 +206,7 @@ Instantly swap any item in your cart:
 - **Higher Quality**: Upgrade to premium brand (+₹30)
 - **Better Value**: Bulk pack recommendation (15% savings)
 
-### 📦 4. Smart Subscription System
+### 4. Smart Subscription System
 
 AI recommends recurring orders for:
 - Weekly groceries
@@ -216,20 +216,20 @@ AI recommends recurring orders for:
 **Auto-reordering schedules:**
 - Daily / Every 7 days / Every 14 days / Monthly
 
-### 💳 5. Quicky Wallet – Instant One-Tap Checkout
+### 5. Quicky Wallet – Instant One-Tap Checkout
 
 - **Pre-loaded wallet** for friction-free checkout
 - **Quick top-up options**: ₹200, ₹500, ₹1000, ₹2000
 - **One-tap purchase** from cart to order confirmation
 - **Balance tracking** and transaction history
 
-### 🎤 6. Voice Shopping
+### 6. Voice Shopping
 
 - **Speech-to-text** input for hands-free shopping
 - **Conversational refinements**: "Add snacks", "Remove chips", "Make it cheaper"
 - **Multi-turn conversations** with context retention
 
-### 📊 7. Three-Tier Cart Strategy
+### 7. Three-Tier Cart Strategy
 
 Every shopping mission gets **three optimized options**:
 
@@ -239,7 +239,7 @@ Every shopping mission gets **three optimized options**:
 | **Balanced** | Best quality-price ratio | Mid-range | Most users (default) |
 | **Premium** | Top brands, complete solution | Highest quality | Quality seekers |
 
-### 🧠 8. Contextual Understanding
+### 8. Contextual Understanding
 
 Quicky understands **nuanced contexts**:
 
@@ -249,7 +249,7 @@ Quicky understands **nuanced contexts**:
 - **People count**: Auto-scales quantities for groups
 - **Age-appropriate**: Teen birthday gifts vs. kid parties
 
-### 💡 9. Intelligent Refinements
+### 9. Intelligent Refinements
 
 Post-generation cart modifications:
 
@@ -259,7 +259,7 @@ Post-generation cart modifications:
 - "Add desserts" → Contextually adds relevant items
 - "Make it vegetarian" → Swaps non-veg items
 
-### 📱 10. Session Management
+### 10. Session Management
 
 - **Chat history** preservation
 - **Session switching** for different shopping trips
@@ -267,7 +267,7 @@ Post-generation cart modifications:
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 ### Frontend
 
@@ -314,7 +314,7 @@ Post-generation cart modifications:
 
 ---
 
-## 📦 Project Structure
+## Project Structure
 
 ```
 Quicky/
@@ -361,7 +361,7 @@ Quicky/
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -440,7 +440,7 @@ npm test
 
 ---
 
-## 🎮 Usage Examples
+## Usage Examples
 
 ### Example 1: Emergency Shopping
 
@@ -531,7 +531,7 @@ npm test
 
 ---
 
-## 🧪 Core Algorithms
+## Core Algorithms
 
 ### 1. Intent Extraction Pipeline
 
@@ -618,7 +618,7 @@ buildVariant(tier: 'economy' | 'balanced' | 'premium', products, intent) {
 
 ---
 
-## 📊 Performance Metrics
+## Performance Metrics
 
 ### Speed Benchmarks
 
@@ -639,7 +639,7 @@ buildVariant(tier: 'economy' | 'balanced' | 'premium', products, intent) {
 
 ---
 
-## 🔐 Security & Privacy
+## Security & Privacy
 
 - **Client-side data storage**: User data stored locally (no server persistence)
 - **API key protection**: Environment variables for sensitive keys
@@ -648,7 +648,7 @@ buildVariant(tier: 'economy' | 'balanced' | 'premium', products, intent) {
 
 ---
 
-## 🚧 Future Enhancements
+## Future Enhancements
 
 ### Planned Features
 
@@ -673,7 +673,7 @@ buildVariant(tier: 'economy' | 'balanced' | 'premium', products, intent) {
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 We welcome contributions! Here's how you can help:
 
@@ -692,31 +692,30 @@ We welcome contributions! Here's how you can help:
 
 ---
 
-## 📄 License
+## License
 
-This project is created for **HackOn 2025 - Amazon Now Challenge**.
-
----
-
-## 👥 Team
-
-**Team Name**: [Your Team Name]
-
-**Built with** ❤️ **for Amazon HackOn 2025**
+This project is created for **HackOn 6.0 2026**.
 
 ---
 
-## 📞 Contact & Support
+## Team
+
+**Team Name**: BongC++
+
+**Built with** ❤️ **for Amazon HackOn 2026**
+
+---
+
+## Contact & Support
 
 - **GitHub Issues**: [Report bugs or request features](https://github.com/Sattwik999/HackOn_AmazonQuicky/issues)
-- **Email**: [Your Email]
-- **Project Demo**: [Live Demo Link]
+- **Email**: [sattwiksarkar18@gmail.com]
+- **Project Demo**: Not Available
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
-- **Amazon** for hosting HackOn 2025
 - **Hugging Face** for AI model hosting
 - **SerpAPI** for product search capabilities
 - **Next.js Team** for the amazing framework
