@@ -87,85 +87,58 @@ Unlike traditional recommendation engines that suggest products one at a time, *
 
 ## 🏗️ System Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        USER INTERFACE LAYER                      │
-├─────────────────────────────────────────────────────────────────┤
-│  • Quicky Chat Widget (Voice + Text Input)                      │
-│  • Product Grid & Cards                                          │
-│  • Multi-Tier Cart Display (Economy/Balanced/Premium)           │
-│  • One-Tap Checkout Interface                                    │
-│  • Quicky Wallet Management                                      │
-│  • Order History & Subscriptions                                │
-└────────────────────┬────────────────────────────────────────────┘
-                     │
-                     ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    INTENT PROCESSING LAYER                       │
-├─────────────────────────────────────────────────────────────────┤
-│  ┌──────────────────┐    ┌──────────────────┐                  │
-│  │  Intent Parser   │───▶│  Need Inference  │                  │
-│  │  (NLP + Regex)   │    │     Engine       │                  │
-│  └──────────────────┘    └──────────────────┘                  │
-│           │                        │                             │
-│           ▼                        ▼                             │
-│  ┌──────────────────┐    ┌──────────────────┐                  │
-│  │Budget Extractor  │    │Category Mapping  │                  │
-│  │People Counter    │    │  & Prioritization│                  │
-│  │Urgency Detector  │    │                  │                  │
-│  └──────────────────┘    └──────────────────┘                  │
-└────────────────────┬────────────────────────────────────────────┘
-                     │
-                     ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    AI ORCHESTRATION LAYER                        │
-├─────────────────────────────────────────────────────────────────┤
-│  ┌─────────────────────────────────────────────────────────────┐│
-│  │  Quicky AI Agent (Hugging Face Qwen3-32B Model)           │││
-│  │  • Context-aware cart generation                           │││
-│  │  • Multi-tier basket optimization                          │││
-│  │  • Real-time refinement & personalization                  │││
-│  └─────────────────────────────────────────────────────────────┘│
-│                              │                                   │
-│  ┌───────────────────────────┼───────────────────────────────┐ │
-│  │                           │                               │ │
-│  ▼                           ▼                               ▼ │
-│ ┌─────────────┐    ┌─────────────────┐         ┌─────────────┐│
-│ │Product      │    │Ranking &        │         │Subscription │││
-│ │Catalog      │    │Scoring Engine   │         │Recommender  │││
-│ │Integration  │    │(Multi-factor)   │         │             │││
-│ └─────────────┘    └─────────────────┘         └─────────────┘│
-└────────────────────┬────────────────────────────────────────────┘
-                     │
-                     ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                      PRODUCT DATA LAYER                          │
-├─────────────────────────────────────────────────────────────────┤
-│  ┌──────────────────┐    ┌──────────────────┐                  │
-│  │  SerpAPI         │    │  Amazon Product  │                  │
-│  │  Integration     │───▶│  Catalog         │                  │
-│  └──────────────────┘    └──────────────────┘                  │
-│           │                        │                             │
-│           ▼                        ▼                             │
-│  • Real-time product search                                     │
-│  • Price extraction                                             │
-│  • Rating & review data                                         │
-│  • Delivery estimates                                           │
-│  • Image & metadata                                             │
-└────────────────────┬────────────────────────────────────────────┘
-                     │
-                     ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    PERSONALIZATION LAYER                         │
-├─────────────────────────────────────────────────────────────────┤
-│  • User Profile Management (LocalStorage/IndexedDB)            │
-│  • Shopping History Tracking                                    │
-│  • Budget Profiling                                             │
-│  • Category Preferences                                         │
-│  • Subscription Management                                      │
-│  • Wallet Balance & Transactions                                │
-└─────────────────────────────────────────────────────────────────┘
-```
+<div align="center">
+  <img src="./public/architecture-diagram.png" alt="Quicky Shopping Platform Architecture" width="100%" />
+</div>
+
+### Architecture Overview
+
+The Quicky Shopping Platform is built on a **layered, microservices-inspired architecture** that separates concerns and enables scalability. The diagram above illustrates the complete data flow from user input to personalized cart generation.
+
+#### Layer Breakdown
+
+**🎨 User Interface Layer**
+- **Quicky Chat Widget**: Voice + Text conversational interface
+- **Product Grid & Cards**: Visual product browsing
+- **Multi-Tier Cart Display**: Economy/Balanced/Premium options
+- **One-Tap Checkout**: Frictionless purchase flow
+- **Quicky Wallet**: Prepaid balance management
+- **Order History & Subscriptions**: User account features
+
+**🧠 Intent Processing Layer**
+- **Intent Parser (NLP + Regex)**: Extracts structured data from natural language
+- **Need Inference Engine**: Maps intent to concrete shopping needs
+- **Budget Extractor**: Identifies price constraints
+- **People Counter**: Detects serving size/quantity requirements
+- **Urgency Detector**: Flags emergency vs. planned shopping
+- **Category Mapping & Prioritization**: Translates needs into searchable categories
+
+**🤖 AI Orchestration Layer**
+- **Quicky AI Agent** (Hugging Face Qwen3-32B):
+  - Context-aware cart generation
+  - Multi-tier basket optimization
+  - Real-time refinement & personalization
+- **Product Catalog Integration**: Real-time product fetching
+- **Ranking & Scoring Engine**: Multi-factor product evaluation
+- **Subscription Recommender**: Auto-reorder suggestions
+
+**📦 Product Data Layer**
+- **SerpAPI Integration**: Live Amazon India product search
+- **Amazon Product Catalog**: Real-time inventory access
+- Features:
+  - Real-time product search
+  - Price extraction & tracking
+  - Rating & review data aggregation
+  - Delivery time estimates
+  - Product images & metadata
+
+**👤 Personalization Layer**
+- **User Profile Management**: LocalStorage/IndexedDB persistence
+- **Shopping History Tracking**: Pattern recognition for better suggestions
+- **Budget Profiling**: Spending habit analysis
+- **Category Preferences**: Favorite product types
+- **Subscription Management**: Recurring order handling
+- **Wallet Balance & Transactions**: Payment tracking
 
 ### Architecture Highlights
 
