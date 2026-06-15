@@ -7,7 +7,6 @@ import { useCart } from '@/components/cart-context'
 import { useQuicky } from '@/components/quicky-context'
 import { QuickyProposedCart } from '@/components/quicky-proposed-cart'
 import { Pacifico } from 'next/font/google'
-import { db, type OrderItem as DBOrderItem } from '@/lib/database'
 import {
   formatRupees,
   mapQuickyItemsToCart,
@@ -27,30 +26,12 @@ interface ChatMessage {
   text: string
   proposal?: QuickyResponse
   actions?: ChatAction[]
-  categorySelector?: CategorySelector
 }
 
 interface ChatAction {
   label: string
   prompt: string
   mode?: 'plan' | 'cart'
-}
-
-interface CategorySelector {
-  title: string
-  peopleQuestion: string
-  peopleOptions: string[]
-  categories: Array<{ id: string; label: string; icon: string }>
-  budget: number | null
-}
-
-// Lightweight client-side tracking for an active clarification turn. The server
-// stays stateless: every turn carries `history`, so we only need to remember
-// that the assistant is awaiting clarifying info and what it has already asked.
-interface ClarificationState {
-  originalQuery: string
-  askedQuestions: string[]
-  turns: number
 }
 
 type CheckoutMode = 'one_tap' | 'quick'
@@ -109,7 +90,6 @@ export function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
   const [pendingPlan, setPendingPlan] = useState<QuickyPlan | null>(null)
-  const [clarificationState, setClarificationState] = useState<ClarificationState | null>(null)
   const [isListening, setIsListening] = useState(false)
   const [customTopUp, setCustomTopUp] = useState('500')
   const [checkoutMode, setCheckoutMode] = useState<CheckoutMode | null>(null)
@@ -261,7 +241,6 @@ export function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
     }
     setMessages([INITIAL_MESSAGE])
     setPendingPlan(null)
-    setClarificationState(null)
     setShowHistory(false)
     setShowWalletSheet(false)
   }
@@ -342,7 +321,6 @@ export function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
 
       if (payload.kind === 'plan') {
         setPendingPlan(payload.plan)
-        setClarificationState(null)
         setMessages((current) => [
           ...current,
           {
@@ -355,73 +333,7 @@ export function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
         return
       }
 
-      if (payload.kind === 'category_selector') {
-        setMessages((current) => [
-          ...current,
-          {
-            id: `assistant_${Date.now()}`,
-            sender: 'assistant',
-            text: payload.message,
-            categorySelector: payload.selector,
-          },
-        ])
-        return
-      }
-
-      if (payload.kind === 'intent_analysis') {
-        setPendingPlan(payload.plan)
-        setClarificationState(null)
-        
-        // Format the AI-generated suggestions naturally
-        const suggestionsText = payload.suggested_needs?.length 
-          ? '\n\n' + payload.suggested_needs.map((need: string, idx: number) => `${idx + 1}. ${need}`).join('\n')
-          : ''
-        
-        const addonsText = payload.optional_addons?.length
-          ? `\n\n💡 You might also want: ${payload.optional_addons.join(', ')}`
-          : ''
-        
-        setMessages((current) => [
-          ...current,
-          {
-            id: `assistant_${Date.now()}`,
-            sender: 'assistant',
-            text: payload.message + suggestionsText + addonsText,
-            actions: [
-              { label: '🛒 Create Basket', prompt: 'Create basket now', mode: 'cart' },
-              { label: '✏️ Modify this', prompt: 'I want to modify: ' },
-            ],
-          },
-        ])
-        return
-      }
-
       if (payload.kind === 'assistant') {
-        // A clarification turn rides on the `assistant` kind with `clarify: true`
-        // and an optional `questions` list. Track the awaiting-clarification state
-        // and surface the questions as tappable quick-action chips so each one
-        // sends that text as the shopper's next reply (re-extraction happens
-        // server-side from `history`). Non-clarify assistant messages keep their
-        // existing capability-style example chips.
-        if (payload.clarify) {
-          const questions: string[] = Array.isArray(payload.questions) ? payload.questions : []
-          setClarificationState((current) => ({
-            originalQuery: current?.originalQuery ?? query,
-            askedQuestions: [...(current?.askedQuestions ?? []), ...questions],
-            turns: (current?.turns ?? 0) + 1,
-          }))
-          setMessages((current) => [
-            ...current,
-            {
-              id: `assistant_${Date.now()}`,
-              sender: 'assistant',
-              text: payload.message,
-              actions: questions.map((question) => ({ label: question, prompt: question })),
-            },
-          ])
-          return
-        }
-
         setMessages((current) => [
           ...current,
           {
@@ -453,7 +365,6 @@ export function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
       }
 
       setPendingPlan(null)
-      setClarificationState(null)
       setMessages((current) => [
         ...current,
         {
@@ -637,46 +548,6 @@ export function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
     }
     clearCart()
 
-    // Save order to database
-    try {
-      const userId = db.getCurrentUserId()
-      const defaultAddress = db.getDefaultAddress(userId)
-      
-      // If no address exists, create a default one
-      const deliveryAddress = defaultAddress || db.addAddress(userId, {
-        type: 'home',
-        addressLine1: 'A-14, Maple Residency',
-        addressLine2: 'Andheri East',
-        city: 'Mumbai',
-        state: 'Maharashtra',
-        pincode: '400069',
-        isDefault: true,
-      })
-
-      const orderItems: DBOrderItem[] = selectedItems.map(item => ({
-        productId: item.product_id,
-        title: item.title,
-        quantity: item.quantity,
-        price: item.unit_price,
-        image: item.image,
-      }))
-
-      const order = db.createOrder(userId, orderItems, deliveryAddress, 'Quicky Wallet')
-      
-      // Save shopping context
-      db.saveContext(
-        userId,
-        checkoutMessage || 'Quick purchase',
-        latestProposal?.context || 'general',
-        selectedItems.map(item => item.title),
-        totalCost
-      )
-
-      console.log('Order created:', order.id)
-    } catch (error) {
-      console.error('Failed to save order:', error)
-    }
-
     let reorderCount = 0
     mappedCartItems.forEach((item) => {
       const schedule = itemSchedules[item.id]
@@ -691,7 +562,7 @@ export function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
       {
         id: createMessageId('checkout'),
         sender: 'assistant',
-        text: `Done. ${modeLabel} placed your order for ${selectedItems.length} items${reorderCount > 0 ? ` and scheduled ${reorderCount} item reorders` : ''}. You can view your order in the Orders section.`,
+        text: `Done. ${modeLabel} placed your order for ${selectedItems.length} items${reorderCount > 0 ? ` and scheduled ${reorderCount} item reorders` : ''}.`,
       },
     ])
 
@@ -726,12 +597,12 @@ export function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
       />
 
       <aside
-        className={`absolute right-0 top-0 flex h-full w-full flex-col bg-[linear-gradient(180deg,rgba(11,15,25,0.98),rgba(6,10,18,0.99))] text-white shadow-[0_32px_120px_rgba(0,0,0,0.9),0_0_0_1px_rgba(255,255,255,0.08)_inset] transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1) ${
-          isOpen ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
+        className={`absolute flex flex-col overflow-hidden bg-[linear-gradient(180deg,rgba(11,15,25,0.96),rgba(6,10,18,0.98))] text-white shadow-[0_24px_90px_rgba(0,0,0,0.8)] transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1) ${
+          isOpen ? 'translate-x-0 opacity-100' : 'translate-x-[120%] opacity-0'
         } ${
           isExpanded
-            ? 'max-w-none sm:m-0 sm:rounded-none sm:border-0'
-            : 'max-w-[42rem] border-l border-white/8 sm:m-6 sm:h-[calc(100%-3rem)] sm:rounded-[32px] sm:border sm:border-white/12'
+            ? 'right-2 top-2 h-[calc(100%-1rem)] w-[calc(100%-1rem)] max-w-none rounded-[24px] border border-white/10 sm:right-4 sm:top-4 sm:h-[calc(100%-2rem)] sm:w-[calc(100%-2rem)] sm:rounded-[38px]'
+            : 'right-2 top-2 h-[calc(100%-1rem)] w-[calc(100%-1rem)] max-w-[42rem] rounded-[24px] border border-white/10 sm:right-4 sm:top-4 sm:h-[calc(100%-2rem)] sm:w-[calc(100%-2rem)] sm:rounded-[38px]'
         }`}
         role="dialog"
         aria-modal="true"
@@ -740,12 +611,12 @@ export function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
         <header
           className={
             isExpanded
-              ? 'absolute left-1/2 top-6 z-50 flex w-[94%] max-w-5xl -translate-x-1/2 items-center justify-between rounded-full border border-white/12 bg-white/[0.08] px-4 py-3 backdrop-blur-2xl shadow-[0_16px_48px_rgba(0,0,0,0.4)] transition-all duration-500'
-              : 'sticky top-0 z-30 flex shrink-0 items-center justify-between border-b border-white/12 bg-white/[0.06] px-3 py-3 backdrop-blur-2xl transition-all duration-500 sm:px-4 sm:rounded-t-[32px]'
+              ? 'absolute left-1/2 top-6 z-50 flex w-[94%] max-w-5xl -translate-x-1/2 items-center justify-between rounded-full border border-white/10 bg-white/[0.06] px-4 py-3 backdrop-blur-2xl shadow-2xl transition-all duration-500'
+              : 'sticky top-0 z-30 flex shrink-0 items-center justify-between border-b border-white/10 bg-white/[0.05] px-3 py-3 backdrop-blur-2xl transition-all duration-500 sm:px-4'
           }
         >
           <div className="flex min-w-0 flex-1 items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-[18px] border border-white/15 bg-gradient-to-br from-[#ffd814] to-[#00a8e1] shadow-[0_12px_30px_rgba(0,168,225,0.28),0_0_0_1px_rgba(255,255,255,0.1)_inset]">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-[#ffd814] to-[#00a8e1] shadow-[0_12px_30px_rgba(0,168,225,0.22)]">
               <img src="/playstore.png" alt="Quicky" className="h-full w-full object-cover" />
             </div>
             <div className="min-w-0">
@@ -755,7 +626,7 @@ export function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
             <button
               type="button"
               onClick={() => setShowWalletSheet(true)}
-              className="ml-1 flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.08] px-3 py-2 text-[11px] font-bold text-slate-200 transition-all duration-300 hover:bg-white/[0.14] hover:text-white hover:border-cyan-300/30 hover:shadow-[0_0_20px_rgba(0,168,225,0.15)] focus:outline-none focus:ring-2 focus:ring-cyan-300/50 sm:ml-3"
+              className="ml-1 flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.06] px-3 py-2 text-[11px] font-bold text-slate-200 transition-colors hover:bg-white/[0.1] hover:text-white focus:outline-none focus:ring-2 focus:ring-cyan-300 sm:ml-3"
             >
               <Wallet size={14} className="text-cyan-300" />
               <span className="hidden sm:inline">Wallet</span>
@@ -763,15 +634,15 @@ export function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
             </button>
             <button
               onClick={handleNewSession}
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/12 bg-white/[0.08] text-slate-300 transition-all duration-300 hover:bg-white/[0.14] hover:text-white hover:border-white/20 focus:outline-none focus:ring-2 focus:ring-cyan-300/50"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-slate-300 transition-colors hover:bg-white/[0.1] hover:text-white focus:outline-none focus:ring-2 focus:ring-cyan-300"
               aria-label="New chat"
             >
               <Plus size={16} />
             </button>
             <button
               onClick={() => setShowHistory(!showHistory)}
-              className={`flex h-10 w-10 items-center justify-center rounded-full border transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-cyan-300/50 ${
-                showHistory ? 'border-cyan-300/40 bg-cyan-400/20 text-cyan-200 shadow-[0_0_20px_rgba(0,168,225,0.2)]' : 'border-white/12 bg-white/[0.08] text-slate-300 hover:bg-white/[0.14] hover:text-white hover:border-white/20'
+              className={`flex h-10 w-10 items-center justify-center rounded-full border transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-300 ${
+                showHistory ? 'border-cyan-300/30 bg-cyan-400/15 text-cyan-200' : 'border-white/10 bg-white/[0.06] text-slate-300 hover:bg-white/[0.1] hover:text-white'
               }`}
               aria-label="History"
               >
@@ -784,7 +655,7 @@ export function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
               type="button"
               onClick={() => setIsExpanded((current) => !current)}
               aria-label={isExpanded ? 'Shrink window' : 'Expand window'}
-              className="hidden h-10 w-10 items-center justify-center rounded-full border border-white/12 bg-white/[0.08] text-slate-300 transition-all duration-300 hover:bg-white/[0.14] hover:text-white hover:border-white/20 focus:outline-none focus:ring-2 focus:ring-cyan-300/50 sm:flex"
+              className="hidden h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-slate-300 transition-colors hover:bg-white/[0.1] hover:text-white focus:outline-none focus:ring-2 focus:ring-cyan-300 sm:flex"
             >
               {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
             </button>
@@ -792,7 +663,7 @@ export function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
               type="button"
               onClick={onClose}
               aria-label="Close"
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/12 bg-white/[0.08] text-slate-300 transition-all duration-300 hover:bg-white/[0.14] hover:text-red-300 hover:border-red-300/30 focus:outline-none focus:ring-2 focus:ring-cyan-300/50"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-slate-300 transition-colors hover:bg-white/[0.1] hover:text-white focus:outline-none focus:ring-2 focus:ring-cyan-300"
             >
               <X size={18} />
             </button>
@@ -801,7 +672,7 @@ export function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
 
         {showWalletSheet && (
           <div className="absolute inset-x-0 top-[86px] z-40 px-3 sm:px-4">
-            <div className="mx-auto w-full max-w-xl rounded-[28px] border border-white/15 bg-[rgba(12,18,29,0.95)] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.06)_inset] backdrop-blur-2xl">
+            <div className="mx-auto w-full max-w-xl rounded-[28px] border border-white/12 bg-[rgba(12,18,29,0.92)] p-4 shadow-[0_22px_70px_rgba(0,0,0,0.38)] backdrop-blur-2xl">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-200">Wallet</p>
@@ -811,7 +682,7 @@ export function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                 <button
                   type="button"
                   onClick={() => setShowWalletSheet(false)}
-                  className="flex h-8 w-8 items-center justify-center rounded-full border border-white/12 bg-white/[0.08] text-slate-300 transition-all duration-300 hover:bg-white/[0.14] hover:text-white hover:border-white/20"
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-slate-300 transition-colors hover:bg-white/[0.1] hover:text-white"
                   aria-label="Close wallet sheet"
                 >
                   <X size={14} />
@@ -824,7 +695,7 @@ export function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                     key={amount}
                     type="button"
                     onClick={() => handleQuickTopUp(amount)}
-                    className="rounded-[20px] border border-white/12 bg-white/[0.06] px-3 py-3 text-left transition-all duration-300 hover:border-cyan-300/40 hover:bg-white/[0.12] hover:shadow-[0_0_20px_rgba(0,168,225,0.15)]"
+                    className="rounded-2xl border border-white/10 bg-white/[0.05] px-3 py-3 text-left transition-colors hover:border-cyan-300/30 hover:bg-white/[0.09]"
                   >
                     <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Add</p>
                     <p className="mt-1 text-base font-black text-white">{formatRupees(amount)}</p>
@@ -833,7 +704,7 @@ export function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                 ))}
               </div>
 
-              <div className="mt-3 flex items-center gap-2 rounded-2xl bg-transparent p-2">
+              <div className="mt-3 flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] p-2">
                 <input
                   value={customTopUp}
                   onChange={(event) => setCustomTopUp(event.target.value)}
@@ -896,7 +767,7 @@ export function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
               </div>
 
               <div className="grid flex-1 gap-0 overflow-hidden lg:grid-cols-[1.3fr_0.9fr]">
-                <div className="min-h-0 overflow-y-auto p-5">
+                <div className="min-h-0 overflow-y-auto p-5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                   {checkoutStep === 'review' && (
                     <div className="space-y-4">
                       <div className="rounded-[24px] border border-white/10 bg-white/[0.04] p-4">
@@ -1050,7 +921,7 @@ export function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
           
           {/* EXPANDED LEFT PANEL: CART VIEW */}
           {isExpanded && latestProposal && !showHistory && (
-            <div className="hidden w-1/2 flex-col items-center justify-start border-r border-white/5 bg-[#0a0a0c]/50 p-8 sm:flex animate-in slide-in-from-left-8 duration-500 overflow-y-auto">
+            <div className="hidden w-1/2 flex-col items-center justify-start border-r border-white/5 bg-[#0a0a0c]/50 px-8 pt-8 pb-36 sm:flex animate-in slide-in-from-left-8 duration-500 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               <div className="w-full max-w-lg mt-4">
                 <QuickyProposedCart
                   proposal={latestProposal}
@@ -1059,24 +930,13 @@ export function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                   onUpdateQuantity={handleUpdateQuantity}
                   onApplyAlternative={handleApplyAlternative}
                   onCheckoutStart={handleCheckoutStart}
-                  onAddToCart={(items) => {
-                    addManyToCart(mapQuickyItemsToCart(items))
-                    setMessages((current) => [
-                      ...current,
-                      {
-                        id: createMessageId('assistant_addcart'),
-                        sender: 'assistant',
-                        text: `Added ${items.length} item${items.length > 1 ? 's' : ''} to your cart.`,
-                      },
-                    ])
-                  }}
                 />
               </div>
             </div>
           )}
 
           {/* CHAT / HISTORY VIEW */}
-          <div className={`flex-1 overflow-y-auto relative ${isExpanded ? 'px-4 pb-6 pt-8 sm:px-8 sm:pt-10' : 'px-4 pb-6 pt-10 sm:px-6 sm:pt-12'}`}>
+          <div className={`flex-1 overflow-y-auto relative [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] ${isExpanded ? 'px-4 pb-36 pt-8 sm:px-8 sm:pt-10' : 'px-4 pb-36 pt-10 sm:px-6 sm:pt-12'}`}>
             
             {showHistory ? (
               <div className="mx-auto w-full max-w-2xl animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -1117,20 +977,26 @@ export function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
               </div>
             ) : (
               <div className="mx-auto flex w-full max-w-3xl flex-col space-y-6 animate-in fade-in duration-300">
-                {/* {showWelcome && (
-                  <div className="mt-1 overflow-hidden rounded-[28px] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.08),rgba(255,255,255,0.02))] p-5 shadow-[0_18px_60px_rgba(0,0,0,0.22)] sm:mt-2">
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 to-[#ffd814] text-slate-950">
-                        <Sparkles size={18} />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-[11px] font-black uppercase tracking-[0.18em] text-cyan-200">Quicky</p>
-                        <h2 className="mt-1 text-2xl font-black tracking-tight text-white sm:text-3xl">Tell me the occasion, and I’ll shape the cart.</h2>
-                        <p className="mt-2 max-w-xl text-sm leading-6 text-slate-300">{INITIAL_MESSAGE.text}</p>
-                      </div>
-                    </div>
-                  </div>
-                )} */}
+                {showWelcome && (
+  <div className="mt-1 overflow-hidden rounded-[24px] border border-white/10 bg-white/[0.03] p-6 shadow-2xl backdrop-blur-md sm:mt-2">
+    <div className="flex items-start gap-4">
+      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-200">
+        <Sparkles size={18} strokeWidth={1.5} />
+      </div>
+      <div className="min-w-0">
+        <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-slate-400">
+          AI Shopping Assistant
+        </p>
+        <h2 className="mt-1 text-2xl font-semibold tracking-tight text-white">
+          Let's build the perfect cart for your needs.
+        </h2>
+        <p className="mt-2 max-w-xl text-sm leading-6 text-slate-400">
+          {INITIAL_MESSAGE.text}
+        </p>
+      </div>
+    </div>
+  </div>
+)}
 
                 {showWelcome && (
                   <div className="grid gap-2 sm:grid-cols-2">
@@ -1188,8 +1054,8 @@ export function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                       
                       {message.sender === 'assistant' && (
                         <div className="flex items-center gap-2 px-1">
-                          <div className="flex h-6 w-6 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-[#ffd814] to-[#00a8e1]">
-                            <img src="/playstore.png" alt="Quicky" className="h-full w-full object-cover" />
+                          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-cyan-500/20 text-cyan-300">
+                            <Sparkles size={11} />
                           </div>
                           <span className={`text-[13px] font-medium text-slate-200 ${pacifico.className}`}>Quicky</span>
                         </div>
@@ -1201,21 +1067,7 @@ export function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                         </div>
                       ) : (
                         <div className="w-full pl-1 sm:pl-8">
-                          {message.categorySelector ? (
-                            <CategorySelectorUI
-                              selector={message.categorySelector}
-                              onSubmit={(selectedPeople, selectedCategories) => {
-                                const categoryNames = selectedCategories.map(
-                                  (id) => message.categorySelector?.categories.find((c) => c.id === id)?.label
-                                ).filter(Boolean).join(', ')
-                                handleSend(
-                                  `${message.categorySelector?.title} for ${selectedPeople} with: ${categoryNames}. Create basket now`,
-                                  message.categorySelector?.budget || undefined,
-                                  'cart'
-                                )
-                              }}
-                            />
-                          ) : !message.proposal ? (
+                          {!message.proposal ? (
                             <div className="prose prose-invert max-w-none text-[15px] leading-relaxed text-slate-300">
                               <p className="whitespace-pre-line">{message.text}</p>
                               {message.actions && (
@@ -1234,7 +1086,7 @@ export function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                               )}
                             </div>
                           ) : (
-                            <div className={`w-full pb-6 ${isExpanded && message.proposal === latestProposal ? 'hidden' : 'block'}`}>
+                            <div className={`w-full pb-2 ${isExpanded && message.proposal === latestProposal ? 'hidden' : 'block'}`}>
                               <p className="mb-3 whitespace-pre-line text-[15px] leading-relaxed text-slate-300">{message.text}</p>
                               <QuickyProposedCart
                                 proposal={message.proposal}
@@ -1243,17 +1095,6 @@ export function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                                 onUpdateQuantity={handleUpdateQuantity}
                                 onApplyAlternative={handleApplyAlternative}
                                 onCheckoutStart={handleCheckoutStart}
-                                onAddToCart={(items) => {
-                                  addManyToCart(mapQuickyItemsToCart(items))
-                                  setMessages((current) => [
-                                    ...current,
-                                    {
-                                      id: createMessageId('assistant_addcart'),
-                                      sender: 'assistant',
-                                      text: `Added ${items.length} item${items.length > 1 ? 's' : ''} to your cart.`,
-                                    },
-                                  ])
-                                }}
                               />
                             </div>
                           )}
@@ -1289,9 +1130,9 @@ export function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
 
         {/* INPUT BAR */}
         {!showHistory && (
-          <div className="sticky bottom-0 left-0 right-0 z-30 bg-[linear-gradient(180deg,rgba(11,15,25,0.96),rgba(6,10,18,0.98))] px-4 py-4 backdrop-blur-2xl sm:px-6">
+          <div className="pointer-events-none absolute bottom-4 left-0 right-0 px-4 sm:bottom-5 sm:px-6">
             <div className="mx-auto w-full max-w-3xl">
-              <div className="rounded-[30px] bg-[rgba(14,19,29,0.82)] p-2 shadow-[0_18px_60px_rgba(0,0,0,0.34)] backdrop-blur-2xl">
+              <div className="pointer-events-auto rounded-[30px] border border-white/12 bg-[rgba(14,19,29,0.82)] p-2 shadow-[0_18px_60px_rgba(0,0,0,0.34)] backdrop-blur-2xl">
                 <div className="flex items-center gap-2 rounded-[24px] border border-white/10 bg-white/[0.04] p-1.5">
                   <button
                     type="button"
@@ -1441,102 +1282,4 @@ function tokenize(value: string) {
     .replace(/[^a-z0-9\s]/g, ' ')
     .split(/\s+/)
     .filter(Boolean)
-}
-
-// Category Selector UI Component
-function CategorySelectorUI({
-  selector,
-  onSubmit,
-}: {
-  selector: CategorySelector
-  onSubmit: (selectedPeople: string, selectedCategories: string[]) => void
-}) {
-  const [selectedPeople, setSelectedPeople] = useState<string>(selector.peopleOptions[0])
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
-
-  const toggleCategory = (id: string) => {
-    setSelectedCategories((current) =>
-      current.includes(id) ? current.filter((c) => c !== id) : [...current, id]
-    )
-  }
-
-  const handleSubmit = () => {
-    if (selectedCategories.length === 0) {
-      // Select all if none selected
-      onSubmit(selectedPeople, selector.categories.map((c) => c.id))
-    } else {
-      onSubmit(selectedPeople, selectedCategories)
-    }
-  }
-
-  return (
-    <div className="w-full max-w-lg rounded-[24px] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-4 shadow-[0_18px_50px_rgba(0,0,0,0.25)]">
-      <h3 className="mb-4 text-lg font-black text-white">{selector.title}</h3>
-      
-      {/* People Selection */}
-      <div className="mb-4">
-        <p className="mb-2 text-sm font-semibold text-slate-300">{selector.peopleQuestion}</p>
-        <div className="flex flex-wrap gap-2">
-          {selector.peopleOptions.map((option) => (
-            <button
-              key={option}
-              type="button"
-              onClick={() => setSelectedPeople(option)}
-              className={`rounded-full px-4 py-2 text-sm font-bold transition-all ${
-                selectedPeople === option
-                  ? 'bg-[#ffd814] text-slate-950 shadow-lg'
-                  : 'border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10'
-              }`}
-            >
-              {option}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Category Selection */}
-      <div className="mb-4">
-        <p className="mb-2 text-sm font-semibold text-slate-300">What do you need? (Select all that apply)</p>
-        <div className="grid grid-cols-2 gap-2">
-          {selector.categories.map((category) => {
-            const isSelected = selectedCategories.includes(category.id)
-            return (
-              <button
-                key={category.id}
-                type="button"
-                onClick={() => toggleCategory(category.id)}
-                className={`flex items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition-all ${
-                  isSelected
-                    ? 'border-2 border-cyan-400 bg-cyan-400/20 text-cyan-100'
-                    : 'border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10'
-                }`}
-              >
-                <span className="text-lg">{category.icon}</span>
-                <span className="flex-1 truncate">{category.label}</span>
-                {isSelected && (
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-cyan-400 text-slate-950">
-                    ✓
-                  </span>
-                )}
-              </button>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* Tip */}
-      <p className="mb-4 text-xs text-slate-400">
-        💡 Tip: You can also type in chat like &quot;I need electronics and furniture only&quot;
-      </p>
-
-      {/* Submit Button */}
-      <button
-        type="button"
-        onClick={handleSubmit}
-        className="w-full rounded-full bg-[#ffd814] py-3 text-sm font-black text-slate-950 shadow-[0_12px_30px_rgba(255,216,20,0.25)] transition-transform hover:scale-[1.02] hover:bg-[#f7ca00]"
-      >
-        🛒 Create Basket {selectedCategories.length > 0 ? `(${selectedCategories.length} selected)` : '(All categories)'}
-      </button>
-    </div>
-  )
 }
