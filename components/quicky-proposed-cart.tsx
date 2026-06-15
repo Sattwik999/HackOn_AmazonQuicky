@@ -120,7 +120,7 @@ export function QuickyProposedCart({
         .map(([id, config]) => [id, config.schedule]),
     ) as Record<string, QuickySchedule>
 
-    onCheckoutStart?.('one_tap', 'Proceeding to the Amazon-style checkout flow with your saved address and wallet.', optimizedItems, schedules)
+    onCheckoutStart?.('one_tap', 'Proceeding to secure checkout with your saved address and wallet.', optimizedItems, schedules)
   }
 
   const startQuickBuy = () => {
@@ -130,7 +130,7 @@ export function QuickyProposedCart({
         .map(([id, config]) => [id, config.schedule]),
     ) as Record<string, QuickySchedule>
 
-    onCheckoutStart?.('quick', 'Quick buy with Amazon-style confirmation and saved address delivery.', optimizedItems, schedules)
+    onCheckoutStart?.('quick', 'Quick buy with instant confirmation and saved address delivery.', optimizedItems, schedules)
   }
 
   return (

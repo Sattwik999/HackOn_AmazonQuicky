@@ -350,17 +350,7 @@ export function Header({ onChatOpen }: HeaderProps) {
             </button>
 
             {/* Quicky Wallet Toggle */}
-            <button
-              type="button"
-              onClick={() => {
-                setIsWalletOpen((current) => !current)
-                setIsOrdersOpen(false)
-              }}
-              className="hidden flex-col rounded-2xl border border-white/10 bg-white/[0.07] px-3 py-2 text-left leading-tight transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#febd69]/80 lg:flex"
-            >
-              <span className="text-[11px] font-medium text-white/65">Quicky</span>
-              <span className="text-[13px] font-bold text-white">Wallet</span>
-            </button>
+            
 
             {/* Cart */}
             <button
@@ -839,7 +829,7 @@ export function Header({ onChatOpen }: HeaderProps) {
             <div className="flex items-center justify-between border-b border-white/10 px-5 py-4 sm:px-6">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-200">Checkout</p>
-                <h2 className="mt-1 text-2xl font-black tracking-tight">Amazon-style checkout</h2>
+                <h2 className="mt-1 text-2xl font-black tracking-tight">Secure checkout</h2>
               </div>
               <button
                 type="button"

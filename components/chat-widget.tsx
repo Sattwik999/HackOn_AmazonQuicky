@@ -623,7 +623,7 @@ export function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
               <h2 className={`truncate text-[24px] font-black tracking-tight text-white ${pacifico.className}`}>Quicky</h2>
               <p className="truncate text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Intent-first shopping</p>
             </div>
-            <button
+            {/* <button
               type="button"
               onClick={() => setShowWalletSheet(true)}
               className="ml-1 flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.06] px-3 py-2 text-[11px] font-bold text-slate-200 transition-colors hover:bg-white/[0.1] hover:text-white focus:outline-none focus:ring-2 focus:ring-cyan-300 sm:ml-3"
@@ -631,7 +631,7 @@ export function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
               <Wallet size={14} className="text-cyan-300" />
               <span className="hidden sm:inline">Wallet</span>
               <span className="text-cyan-200">Top up</span>
-            </button>
+            </button> */}
             <button
               onClick={handleNewSession}
               className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-slate-300 transition-colors hover:bg-white/[0.1] hover:text-white focus:outline-none focus:ring-2 focus:ring-cyan-300"
@@ -754,7 +754,7 @@ export function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
               <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-200">Checkout</p>
-                  <h3 className="mt-1 text-xl font-black text-white">Amazon-style secure checkout</h3>
+                  <h3 className="mt-1 text-xl font-black text-white">Secure checkout</h3>
                 </div>
                 <button
                   type="button"
