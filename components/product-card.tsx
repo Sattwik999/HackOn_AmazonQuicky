@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import Link from 'next/link'
 import { ShoppingCart, Star, ShieldCheck, Truck } from 'lucide-react'
 import { useCart } from '@/components/cart-context'
 
@@ -16,6 +17,7 @@ export interface SerpProduct {
   source?: string;
   delivery?: string;
   asin?: string; // Added ASIN in case you switched to the Amazon Engine
+  image?: string; // Alternative image field
 }
 
 interface ProductCardProps {
@@ -60,7 +62,8 @@ export function ProductCard({ product }: ProductCardProps) {
   }
 
   return (
-    <div className="group relative flex h-full min-h-[500px] flex-col overflow-hidden rounded-[20px] border border-slate-200/80 bg-white shadow-[0_14px_40px_rgba(15,23,42,0.08)] transition-all duration-500 hover:-translate-y-2 hover:border-cyan-200/70 hover:shadow-[0_24px_70px_rgba(8,145,178,0.18)] dark:border-white/10 dark:bg-slate-900 dark:shadow-black/30">
+    <Link href={`/product/${safeId}`} className="block h-full">
+      <div className="group relative flex h-full min-h-[500px] flex-col overflow-hidden rounded-[20px] border border-slate-200/80 bg-white shadow-[0_14px_40px_rgba(15,23,42,0.08)] transition-all duration-500 hover:-translate-y-2 hover:border-cyan-200/70 hover:shadow-[0_24px_70px_rgba(8,145,178,0.18)] dark:border-white/10 dark:bg-slate-900 dark:shadow-black/30">
       
       {/* 1. Deal Badge (Top Left) */}
       {isDeal && (
@@ -167,6 +170,8 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
 
       </div>
+
     </div>
+    </Link>
   )
 }

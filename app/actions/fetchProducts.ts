@@ -267,20 +267,56 @@ export async function fetchProductDetails(asin: string): Promise<ProductDetails 
          const data = await res.json()
          if (data.product_results) {
            const p = data.product_results
+           const priceValue = p.price?.value || p.price || 0
+           
+           // Better description handling
+           let description = 'No description available.'
+           if (p.description) {
+             description = p.description
+           } else if (p.product_description) {
+             description = p.product_description
+           } else if (p.feature_bullets && p.feature_bullets.length > 0) {
+             description = p.feature_bullets[0]
+           }
+           
+           // Better features handling
+           let features = []
+           if (p.feature_bullets && Array.isArray(p.feature_bullets) && p.feature_bullets.length > 0) {
+             features = p.feature_bullets
+           } else if (p.features && Array.isArray(p.features)) {
+             features = p.features
+           } else if (description && description !== 'No description available.') {
+             features = [description]
+           }
+           
+           // Better image handling - filter out empty strings and ensure at least one valid image
+           let images = []
+           if (p.images && Array.isArray(p.images)) {
+             images = p.images.map((img: any) => img.link || img).filter((url: string) => url && url.trim() !== '')
+           } else if (p.image && p.image.trim() !== '') {
+             images = [p.image]
+           }
+           
+           // Ensure we have at least one image
+           if (images.length === 0) {
+             const productName = p.title || 'Product'
+             images = [`https://placehold.co/600x600/e5e7eb/1f2937?text=${encodeURIComponent(productName.substring(0, 20))}`]
+           }
+           
            return {
-             id: p.asin,
-             name: p.title,
-             price: p.price ? p.price.value : 0,
-             originalPrice: p.price?.value ? Math.round(p.price.value * 1.2) : undefined, // simplified fallback
-             images: p.images ? p.images.map((img: any) => img.link) : [p.image || ''],
+             id: p.asin || asin,
+             name: p.title || 'Product',
+             price: priceValue,
+             originalPrice: priceValue ? Math.round(priceValue * 1.2) : undefined,
+             images: images,
              rating: p.rating || 4.5,
              reviews: p.reviews || 0,
-             description: p.product_information || 'No description available.',
-             features: p.feature_bullets || [],
+             description: description,
+             features: features,
              prime: p.is_prime || false,
              stock: p.availability_status?.toLowerCase().includes('in stock') ? 'in-stock' : 'low-stock',
              deliveryTime: p.delivery?.price?.raw || 'Standard Delivery',
-             brand: p.brand
+             brand: p.brand || p.title?.split(' ')[0] || 'Generic'
            }
          }
       }
@@ -292,27 +328,34 @@ export async function fetchProductDetails(asin: string): Promise<ProductDetails 
   // Fallback: look up in MOCK_PRODUCTS
   const mockProduct = MOCK_PRODUCTS.find(p => p.id === asin)
   if (mockProduct) {
+     // Generate placeholder image if no image available
+     const fallbackImage = mockProduct.image || `https://placehold.co/600x600/e5e7eb/1f2937?text=${encodeURIComponent(mockProduct.name.substring(0, 20))}`
+     
      return {
         id: mockProduct.id,
         name: mockProduct.name,
         price: mockProduct.price,
         originalPrice: mockProduct.originalPrice,
-        images: mockProduct.image ? [mockProduct.image] : ['https://m.media-amazon.com/images/I/61vJtKbAssL._AC_UY218_.jpg'],
+        images: mockProduct.image ? [mockProduct.image, mockProduct.image, mockProduct.image] : [fallbackImage, fallbackImage],
         rating: mockProduct.rating,
         reviews: mockProduct.reviews,
-        description: 'Detailed description for this mock product. It offers excellent value and top quality material suitable for all your daily needs.',
+        description: `${mockProduct.name} offers excellent quality and value. This premium ${mockProduct.category.toLowerCase()} product is designed for everyday use and comes with guaranteed satisfaction. Perfect for your home and lifestyle needs.`,
         features: [
-           'High quality manufacturing',
-           'Durable and reliable',
-           'Perfect for everyday use',
-           'Top rated by customers'
+           `Premium ${mockProduct.category.toLowerCase()} product`,
+           'High quality materials and construction',
+           'Durable and long-lasting design',
+           'Top rated by verified customers',
+           mockProduct.prime ? 'Prime eligible for fast delivery' : 'Free delivery available',
+           mockProduct.tags.join(' • ')
         ],
         prime: mockProduct.prime || false,
         stock: mockProduct.stock || 'in-stock',
-        deliveryTime: mockProduct.deliveryTime,
-        brand: 'Generic Brand'
+        deliveryTime: mockProduct.deliveryTime || 'Delivery in 2-3 days',
+        brand: mockProduct.name.split(' ')[0] || 'Generic Brand'
      }
   }
 
+  // If no mock product found, return null (but log it)
+  console.warn(`Product with ASIN ${asin} not found in mock data`)
   return null
 }

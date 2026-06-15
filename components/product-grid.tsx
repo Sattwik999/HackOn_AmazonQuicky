@@ -542,8 +542,13 @@ export function ProductGrid() {
 
       } catch (error: any) {
         console.warn("Modal Fetch Error:", error.message)
-        alert(`Oops! ${error.message}`)
-        setSelectedProductAsin(null) 
+        // Instead of alert, show error in the modal
+        setDetailedProduct({
+          title: 'Product Unavailable',
+          error: true,
+          errorMessage: error.message || 'Unable to load product details'
+        } as any)
+        setActiveImage('')
       } finally {
         setIsModalLoading(false)
       }
@@ -661,6 +666,20 @@ export function ProductGrid() {
               <div className="flex-1 flex flex-col items-center justify-center min-h-[600px]">
                 <Loader2 className="animate-spin text-[#FFD814] mb-4" size={48} />
                 <p className="text-gray-500 font-medium">Fetching product details from Amazon...</p>
+              </div>
+            ) : detailedProduct.error ? (
+              <div className="flex-1 flex flex-col items-center justify-center min-h-[600px] p-8">
+                <AlertCircle size={64} className="text-[#CC0C39] mb-4" />
+                <h2 className="text-2xl font-bold text-slate-950 mb-2 dark:text-white">Product Details Unavailable</h2>
+                <p className="text-slate-600 text-center max-w-md mb-6 dark:text-slate-300">
+                  {detailedProduct.errorMessage || 'We were unable to load the detailed information for this product.'}
+                </p>
+                <button
+                  onClick={() => setSelectedProductAsin(null)}
+                  className="px-6 py-2.5 bg-[#FFD814] hover:bg-[#F7CA00] text-black font-medium rounded-full transition-colors"
+                >
+                  Close
+                </button>
               </div>
             ) : (
               <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
